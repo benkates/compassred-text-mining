@@ -61,7 +61,7 @@ for (folder in c(services,solutions,about,employees,careers,blog_posts)){
       c(html_nodes(getCR(folder),css=".sqs-block-content"))
   }
   
-  Sys.sleep(1)
+  Sys.sleep(1) #don't overwhelm the site
 } 
 
 #create output vector then iterate through nodes (avoid the ones we don't want)
@@ -69,9 +69,9 @@ text_vec <- character()
 for (html_snippet in html_body){
   
   #check to make sure there's content
-  if (length(html_nodes(html_snippet,"h1")) > 0 & length(html_nodes(html_snippet,xpath="//p|blockquote")) == 0){next}
+  if (length(html_nodes(html_snippet,"h1")) > 0 & length(html_nodes(html_snippet,xpath="p|blockquote")) == 0){next}
   
-  #check for footer (cheating a little bit)
+  #check for footer
   footer_text <- "CompassRed, Inc. | All rights reserved. © 2018 | wilmington, de | philadelphia, pa | "
   text <- html_text(html_snippet)
   if (substr(text, 0, nchar(footer_text)) == footer_text){next}
@@ -79,10 +79,7 @@ for (html_snippet in html_body){
   #check for newsletter
   newsletter_text <- "Sign up for weekly data stories @ The Data Lab"
   text <- html_text(html_snippet)
-  if (substr(text, 0, nchar(newsletter_text)) == footer_text){next}
-  
-  #check for nodes containing all whitespace
-  if (grepl("\n\n\n",text)){next}
+  if (substr(text, 0, nchar(newsletter_text)) == newsletter_text){next}
   
   #extract text from p nodes
   content_nodes <- html_nodes(html_snippet,xpath="p|blockquote")
@@ -103,3 +100,4 @@ data(stop_words)
 text_tokenized %>% anti_join(stop_words) %>%
   group_by(word) %>% summarise(count=n()) %>%
   arrange(desc(count))
+
