@@ -49,32 +49,42 @@ for (blog_post in c(blog,blog_older_pages)){
 }
 
 #scrape content
-scrape_df <- tibble(node = character(),folder = character())
+scrape_df <- tibble(text = character(),folder = character(),date=character())
 
 for (folder in c(services,solutions,about,employees,careers,blog_posts)){
   
-  #scrape page and extract html nodes with class "sqs-block-content" (commonly used on page for main content)
+  #scrape page and extract text within elements with class "sqs-block-content" (commonly used on page for main content)
   html_body <- html_text(html_nodes(getCR(folder),".sqs-block-content"))
-  scrape_df <- scrape_df %>% add_row(node=html_body,folder=folder)
   
-  Sys.sleep(1) #don't overwhelm the site
+  #grab date if it exists (example of date content: <meta itemprop="datePublished" content="2019-02-27T11:43:53-0800">)
+  date <- html_node(getCR(folder),xpath="//meta[@itemprop='datePublished']") %>%
+    html_attr('content') %>% as.Date() %>% as.character()
+
+  #add to df
+  scrape_df <- scrape_df %>% add_row(text=html_body,folder=folder,date=date)
+  
+  #don't overwhelm the site
+  Sys.sleep(1)
+  
 } 
 
-#remove text that looks like the footer
+#remove text that looks like the footer (escaping pipe)
 footer_text <- "CompassRed, Inc. \\| All rights reserved"
-scrape_df <- scrape_df[!(grepl(footer_text,scrape_df$node)),]
+scrape_df <- scrape_df[!(grepl(footer_text,scrape_df$text)),]
 
 #TRANSFORMING####
 #tokenize words
-text_tokenized <- scrape_df %>% unnest_tokens(word,node)
+text_tokenized <- scrape_df %>% unnest_tokens(word,text)
 
 #take out stop words and count
 data(stop_words)
 text_df <- text_tokenized %>% anti_join(stop_words) %>%
-  group_by(folder,word) %>% summarise(count=n()) %>%
+  group_by(folder,date,word) %>% summarise(count=n()) %>%
   arrange(desc(count))
 
 
-
+#LOADING####
+#write csv and manually upload to Google Data Studio
+write.csv(text_df,"compassred-text-mining.csv",row.names=F,fileEncoding="UTF-8")
 
 
