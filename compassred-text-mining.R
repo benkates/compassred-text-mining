@@ -58,7 +58,7 @@ for (folder in c(services,solutions,about,employees,careers,blog_posts)){
   
   #grab date if it exists (example of date content: <meta itemprop="datePublished" content="2019-02-27T11:43:53-0800">)
   date <- html_node(getCR(folder),xpath="//meta[@itemprop='datePublished']") %>%
-    html_attr('content') %>% as.Date() %>% as.character()
+    html_attr('content') %>% as.Date() %>% format("%Y%m%d") %>% as.character()
 
   #add to df
   scrape_df <- scrape_df %>% add_row(text=html_body,folder=folder,date=date)
